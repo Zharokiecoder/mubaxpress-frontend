@@ -52,7 +52,7 @@ const Navbar = () => {
               <FiShoppingBag className="text-white text-2xl" />
             </motion.div>
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-              StudentMart
+              MUBAEXPRESS
             </span>
           </Link>
 
