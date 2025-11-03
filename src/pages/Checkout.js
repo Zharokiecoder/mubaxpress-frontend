@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { FiMapPin, FiPhone, FiCreditCard, FiLock, FiShield, FiCheck, FiPackage, FiEdit2 } from 'react-icons/fi';
 
 const Checkout = () => {
-  const { cartItems, getCartTotal, clearCart } = useCart();
+ const { cartItems, getCartTotal } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);

@@ -38,6 +38,7 @@ const Messages = () => {
         socketRef.current.disconnect();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, selectedConversation]);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const Messages = () => {
     if (userIdParam) {
       loadConversationWithUser(userIdParam);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   useEffect(() => {

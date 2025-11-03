@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { getProduct, addReview } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -11,8 +11,7 @@ import {
   FiHeart, 
   FiShare2, 
   FiStar, 
-  FiMapPin, 
-  FiUser,
+  FiMapPin,
   FiMessageCircle,
   FiTruck,
   FiShield,

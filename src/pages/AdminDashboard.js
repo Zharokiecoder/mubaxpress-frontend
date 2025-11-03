@@ -1,503 +1,519 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getAllUsers, getStatistics, deactivateUser, activateUser, deleteUser, getAllProducts } from '../services/api';
+import { motion } from 'framer-motion';
+import { 
+  FiUsers, 
+  FiPackage, 
+  FiShoppingBag, 
+  FiTrash2, 
+  FiEdit,
+  FiShield,
+  FiUserCheck,
+  FiActivity,
+  FiTrendingUp,
+  FiEye,
+  FiSearch,
+  FiMoreVertical,
+  FiUserX
+} from 'react-icons/fi';
+import { getAllUsers, getAllProducts, deleteUser, deleteProduct } from '../services/api';
 import toast from 'react-hot-toast';
-import { FiUsers, FiShoppingBag, FiTrendingUp, FiSearch, FiMoreVertical, FiUserCheck, FiUserX, FiTrash2, FiActivity, FiDollarSign, FiEye, FiShield } from 'react-icons/fi';
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState('');
-  const [showMenu, setShowMenu] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
     try {
-      const [statsRes, usersRes, productsRes] = await Promise.all([
-        getStatistics(),
+      setLoading(true);
+      const [usersRes, productsRes] = await Promise.all([
         getAllUsers(),
         getAllProducts()
       ]);
-
-      setStats(statsRes.data.statistics);
-      setUsers(usersRes.data.users);
-      setProducts(productsRes.data.products);
+      setUsers(usersRes.data.data || []);
+      setProducts(productsRes.data.data || []);
     } catch (error) {
-      toast.error('Failed to load admin data');
-      console.error('Error fetching admin data:', error);
+      console.error('Error fetching data:', error);
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeactivateUser = async (userId, userName) => {
-    if (window.confirm(`Deactivate ${userName}?`)) {
-      try {
-        await deactivateUser(userId);
-        toast.success('User deactivated');
-        fetchData();
-      } catch (error) {
-        toast.error('Failed to deactivate user');
-      }
-    }
-    setShowMenu(null);
-  };
-
-  const handleActivateUser = async (userId, userName) => {
-    try {
-      await activateUser(userId);
-      toast.success(`${userName} activated`);
-      fetchData();
-    } catch (error) {
-      toast.error('Failed to activate user');
-    }
-    setShowMenu(null);
-  };
-
-  const handleDeleteUser = async (userId, userName) => {
-    if (window.confirm(`Permanently delete ${userName}? This cannot be undone.`)) {
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         await deleteUser(userId);
-        toast.success('User deleted');
+        toast.success('User deleted successfully');
         fetchData();
       } catch (error) {
+        console.error('Error deleting user:', error);
         toast.error('Failed to delete user');
       }
     }
-    setShowMenu(null);
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = filterRole === '' || user.role === filterRole;
-    return matchesSearch && matchesRole;
-  });
+  const handleDeleteProduct = async (productId) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await deleteProduct(productId);
+        toast.success('Product deleted successfully');
+        fetchData();
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Failed to delete product');
+      }
+    }
+  };
+
+  // Calculate statistics
+  const stats = {
+    totalUsers: users.length,
+    totalStudents: users.filter(u => u.role === 'student').length,
+    totalVendors: users.filter(u => u.role === 'vendor').length,
+    totalProducts: products.length,
+    totalOrders: 0, // You can add this from orders data
+    revenue: 0 // You can calculate this from orders
+  };
+
+  // Filter data based on search
+  const filteredUsers = users.filter(user =>
+    user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredProducts = products.filter(product =>
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-semibold">Loading admin panel...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 mb-8 text-white shadow-2xl relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-black opacity-10"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="bg-white bg-opacity-20 p-3 rounded-xl backdrop-blur-sm">
-                    <FiShield className="text-3xl" />
-                  </div>
-                  <div>
-                    <h1 className="text-4xl font-bold">Admin Control Center</h1>
-                    <p className="text-indigo-100 text-lg">Complete platform oversight</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white bg-opacity-20 backdrop-blur-sm px-6 py-3 rounded-xl">
-                <div className="text-sm text-indigo-100">Total Revenue</div>
-                <div className="text-3xl font-bold">₦{(stats?.totalProducts * 5000 || 0).toLocaleString()}</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Manage users, products, and platform settings</p>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[
-            { 
-              label: 'Total Users', 
-              value: stats?.totalUsers || 0, 
-              icon: FiUsers, 
-              gradient: 'from-blue-500 to-blue-600',
-              bg: 'bg-blue-50',
-              textColor: 'text-blue-600'
-            },
-            { 
-              label: 'Students', 
-              value: stats?.totalStudents || 0, 
-              icon: FiUserCheck, 
-              gradient: 'from-green-500 to-green-600',
-              bg: 'bg-green-50',
-              textColor: 'text-green-600'
-            },
-            { 
-              label: 'Vendors', 
-              value: stats?.totalVendors || 0, 
-              icon: FiShoppingBag, 
-              gradient: 'from-purple-500 to-purple-600',
-              bg: 'bg-purple-50',
-              textColor: 'text-purple-600'
-            },
-            { 
-              label: 'Products', 
-              value: stats?.totalProducts || 0, 
-              icon: FiActivity, 
-              gradient: 'from-orange-500 to-orange-600',
-              bg: 'bg-orange-50',
-              textColor: 'text-orange-600'
-            }
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5, shadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 cursor-pointer group"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`${stat.bg} p-4 rounded-xl group-hover:scale-110 transition-transform`}>
-                  <stat.icon className={`text-3xl ${stat.textColor}`} />
-                </div>
-                <FiTrendingUp className="text-green-500 text-xl" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.totalUsers}</p>
               </div>
-              <p className="text-gray-600 text-sm mb-2">{stat.label}</p>
-              <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
-              <div className="mt-3 text-xs text-gray-500 flex items-center">
-                <span className="text-green-600 font-semibold mr-1">+12%</span>
-                <span>vs last month</span>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
+                <FiUsers className="text-blue-600 dark:text-blue-400" size={24} />
               </div>
-            </motion.div>
-          ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Products</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.totalProducts}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
+                <FiPackage className="text-green-600 dark:text-green-400" size={24} />
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Vendors</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.totalVendors}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
+                <FiShield className="text-purple-600 dark:text-purple-400" size={24} />
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.totalOrders}</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
+                <FiShoppingBag className="text-orange-600 dark:text-orange-400" size={24} />
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100"
-        >
-          <div className="border-b border-gray-100 bg-gray-50">
-            <nav className="flex space-x-1 p-2">
-              {[
-                { id: 'overview', label: 'Overview', icon: FiActivity },
-                { id: 'users', label: 'Users', icon: FiUsers },
-                { id: 'products', label: 'Products', icon: FiShoppingBag }
-              ].map((tab) => (
-                <motion.button
-                  key={tab.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-4 px-6 font-semibold text-sm rounded-xl transition-all flex items-center justify-center space-x-2 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
-                      : 'text-gray-600 hover:bg-white hover:text-primary-600'
-                  }`}
-                >
-                  <tab.icon />
-                  <span>{tab.label}</span>
-                </motion.button>
-              ))}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <nav className="flex space-x-8 px-6" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'overview'
+                    ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <FiActivity />
+                  <span>Overview</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'users'
+                    ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <FiUserCheck />
+                  <span>Users ({stats.totalUsers})</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('products')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'products'
+                    ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <FiPackage />
+                  <span>Products ({stats.totalProducts})</span>
+                </div>
+              </button>
             </nav>
           </div>
+        </div>
 
-          {/* Tab Content */}
-          <AnimatePresence mode="wait">
-            {activeTab === 'overview' && (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="p-8"
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Platform Overview</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  {/* Recent Activity */}
-                  <div className="bg-gradient-to-br from-primary-50 to-lightGreen-50 rounded-2xl p-6">
-                    <h3 className="font-bold text-gray-900 mb-4 flex items-center">
-                      <FiActivity className="mr-2 text-primary-600" />
-                      Recent Users
-                    </h3>
-                    <div className="space-y-3">
-                      {users.slice(0, 5).map(user => (
-                        <div key={user._id} className="flex items-center justify-between bg-white rounded-xl p-3">
-                          <div className="flex items-center space-x-3">
-                            <img src={user.profileImage} alt={user.fullName} className="w-10 h-10 rounded-full border-2 border-primary-200" />
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{user.fullName}</p>
-                              <p className="text-xs text-gray-600">{user.role}</p>
-                            </div>
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Recent Activity */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <FiTrendingUp className="inline mr-2" />
+                Recent Activity
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                      <FiUsers className="text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">New user registered</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">2 minutes ago</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400"><FiActivity className="inline" /></span>
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                      <FiPackage className="text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">New product added</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">15 minutes ago</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400"><FiActivity className="inline" /></span>
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
+                      <FiShoppingBag className="text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">New order placed</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">1 hour ago</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400"><FiActivity className="inline" /></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">User Distribution</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Students</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{stats.totalStudents}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Vendors</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{stats.totalVendors}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Admins</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {users.filter(u => u.role === 'admin').length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform Stats</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <FiEye className="inline mr-2" />
+                      Active Products
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {products.filter(p => p.stockQuantity > 0).length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <FiUserCheck className="inline mr-2" />
+                      Verified Users
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {users.filter(u => u.isVerified).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            {/* Search Bar */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      University
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredUsers.map((user) => (
+                    <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <img
+                            src={user.profileImage?.startsWith('http') 
+                              ? user.profileImage 
+                              : `http://localhost:5000${user.profileImage}`
+                            }
+                            alt={user.fullName}
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{user.fullName}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                           </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                            user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
-                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Latest Products */}
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6">
-                    <h3 className="font-bold text-gray-900 mb-4 flex items-center">
-                      <FiShoppingBag className="mr-2 text-blue-600" />
-                      Latest Products
-                    </h3>
-                    <div className="space-y-3">
-                      {products.slice(0, 5).map(product => (
-                        <div key={product._id} className="flex items-center justify-between bg-white rounded-xl p-3">
-                          <div className="flex items-center space-x-3">
-                            <img src={product.images[0]} alt={product.title} className="w-10 h-10 rounded-lg object-cover" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm truncate">{product.title}</p>
-                              <p className="text-xs text-gray-600">{product.category}</p>
-                            </div>
-                          </div>
-                          <span className="text-primary-600 font-bold text-sm">₦{product.price.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 text-center hover:border-primary-500 transition-all">
-                    <FiEye className="text-4xl text-primary-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-gray-900">
-                      {products.reduce((sum, p) => sum + p.views, 0).toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Views</div>
-                  </div>
-                  <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 text-center hover:border-green-500 transition-all">
-                    <FiUserCheck className="text-4xl text-green-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-gray-900">
-                      {users.filter(u => u.isActive).length}
-                    </div>
-                    <div className="text-sm text-gray-600">Active Users</div>
-                  </div>
-                  <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 text-center hover:border-blue-500 transition-all">
-                    <FiShoppingBag className="text-4xl text-blue-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-gray-900">
-                      {stats?.activeProducts || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Active Products</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'users' && (
-              <motion.div
-                key="users"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="p-8"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-                  <div className="flex space-x-3">
-                    <div className="relative">
-                      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search users..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 transition-all"
-                      />
-                    </div>
-                    <select
-                      value={filterRole}
-                      onChange={(e) => setFilterRole(e.target.value)}
-                      className="px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 transition-all"
-                    >
-                      <option value="">All Roles</option>
-                      <option value="student">Students</option>
-                      <option value="vendor">Vendors</option>
-                      <option value="admin">Admins</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">User</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">University</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Joined</th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                      {filteredUsers.map((user) => (
-                        <motion.tr
-                          key={user._id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="hover:bg-gray-50 transition-colors"
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.role === 'admin' 
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                            : user.role === 'vendor'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user.university || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.isVerified
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        }`}>
+                          <FiUserCheck className="mr-1" />
+                          {user.isVerified ? 'Verified' : 'Unverified'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                          <FiMoreVertical />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                         >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center">
-                              <img src={user.profileImage} alt={user.fullName} className="w-10 h-10 rounded-full border-2 border-gray-200 mr-3" />
-                              <div>
-                                <div className="font-semibold text-gray-900">{user.fullName}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${
-                              user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                              user.role === 'vendor' ? 'bg-blue-100 text-blue-700' :
-                              'bg-green-100 text-green-700'
-                            }`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{user.university}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                              user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {user.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {new Date(user.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 text-right relative">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => setShowMenu(showMenu === user._id ? null : user._id)}
-                              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                              <FiMoreVertical />
-                            </motion.button>
-                            
-                            {showMenu === user._id && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 z-10 overflow-hidden"
-                              >
-                                {user.isActive ? (
-                                  <button
-                                    onClick={() => handleDeactivateUser(user._id, user.fullName)}
-                                    className="block w-full text-left px-4 py-3 text-sm text-orange-600 hover:bg-orange-50 transition-colors flex items-center"
-                                  >
-                                    <FiUserX className="mr-2" />
-                                    Deactivate User
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleActivateUser(user._id, user.fullName)}
-                                    className="block w-full text-left px-4 py-3 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center"
-                                  >
-                                    <FiUserCheck className="mr-2" />
-                                    Activate User
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleDeleteUser(user._id, user.fullName)}
-                                  className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center"
-                                >
-                                  <FiTrash2 className="mr-2" />
-                                  Delete User
-                                </button>
-                              </motion.div>
-                            )}
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {filteredUsers.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    No users found matching your criteria
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === 'products' && (
-              <motion.div
-                key="products"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="p-8"
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Product Management</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product, index) => (
-                    <motion.div
-                      key={product._id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:border-primary-500 transition-all"
-                    >
-                      <img src={product.images[0]} alt={product.title} className="w-full h-48 object-cover" />
-                      <div className="p-5">
-                        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{product.title}</h3>
-                        <div className="flex items-center justify-between text-sm mb-3">
-                          <span className="text-gray-600">{product.category}</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                            product.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {product.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <div className="text-2xl font-bold text-primary-600 mb-2">
-                          ₦{product.price.toLocaleString()}
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-gray-600 pt-3 border-t">
-                          <span>Vendor: {product.vendor?.fullName}</span>
-                          <span className="flex items-center">
-                            <FiEye className="mr-1" />
-                            {product.views}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
+                          <FiTrash2 />
+                        </button>
+                      </td>
+                    </tr>
                   ))}
-                </div>
+                </tbody>
+              </table>
+            </div>
 
-                {products.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    No products available
-                  </div>
-                )}
-              </motion.div>
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-12">
+                <FiUserX className="mx-auto text-gray-400 dark:text-gray-600" size={48} />
+                <p className="mt-4 text-gray-500 dark:text-gray-400">No users found</p>
+              </div>
             )}
-          </AnimatePresence>
-        </motion.div>
+          </div>
+        )}
+
+        {activeTab === 'products' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            {/* Search Bar */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+              {filteredProducts.map((product) => (
+                <motion.div
+                  key={product._id}
+                  whileHover={{ y: -4 }}
+                  className="bg-white dark:bg-gray-700 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="relative h-48">
+                    <img
+                      src={product.image?.startsWith('http') 
+                        ? product.image 
+                        : `http://localhost:5000${product.image}`
+                      }
+                      alt={product.name}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                      product.stockQuantity > 0
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                    }`}>
+                      {product.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 truncate">
+                      {product.name}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{product.category}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                        ₦{product.price?.toLocaleString()}
+                      </span>
+                      <div className="flex space-x-2">
+                        <button className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                          <FiEye />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product._id)}
+                          className="p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <FiPackage className="mx-auto text-gray-400 dark:text-gray-600" size={48} />
+                <p className="mt-4 text-gray-500 dark:text-gray-400">No products found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
