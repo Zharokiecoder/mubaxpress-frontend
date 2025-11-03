@@ -134,7 +134,7 @@ const Register = () => {
             </div>
           </motion.div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent mb-2">
-            Join StudentMart
+            Join MUBAEXPRESS
           </h2>
           <p className="text-gray-600 dark:text-gray-400 text-lg">Create your account in just 2 simple steps</p>
         </motion.div>
