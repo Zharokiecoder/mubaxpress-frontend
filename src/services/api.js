@@ -8,7 +8,7 @@ export const checkWishlist = (productId) => API.get(`/wishlist/check/${productId
 
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: ' https://mubaxpress-backend-1.onrender.com',
   withCredentials: true
 });
 
