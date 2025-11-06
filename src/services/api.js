@@ -1,14 +1,9 @@
 import axios from 'axios';
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-// Wishlist APIs
-export const getWishlist = () => API.get('/wishlist');
-export const addToWishlist = (productId) => API.post(`/wishlist/${productId}`);
-export const removeFromWishlist = (productId) => API.delete(`/wishlist/${productId}`);
-export const checkWishlist = (productId) => API.get(`/wishlist/check/${productId}`);
 
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const API = axios.create({
-  baseURL: ' https://mubaxpress-backend-1.onrender.com',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
   withCredentials: true
 });
 
@@ -22,51 +17,57 @@ API.interceptors.request.use((config) => {
 });
 
 // Auth APIs
-export const register = (userData) => API.post('/auth/register', userData);
-export const login = (credentials) => API.post('/auth/login', credentials);
-export const logout = () => API.post('/auth/logout');
-export const getMe = () => API.get('/auth/me');
-export const updateProfile = (data) => API.put('/auth/update-profile', data);
+export const register = (userData) => API.post('/api/auth/register', userData);
+export const login = (credentials) => API.post('/api/auth/login', credentials);
+export const logout = () => API.post('/api/auth/logout');
+export const getMe = () => API.get('/api/auth/me');
+export const updateProfile = (data) => API.put('/api/auth/update-profile', data);
 
 // Product APIs
-export const getAllProducts = (params) => API.get('/products', { params });
-export const getProduct = (id) => API.get(`/products/${id}`);
-export const createProduct = (data) => API.post('/products', data);
-export const updateProduct = (id, data) => API.put(`/products/${id}`, data);
-export const deleteProduct = (id) => API.delete(`/products/${id}`);
-export const getMyProducts = () => API.get('/products/vendor/my-products');
-export const addReview = (id, data) => API.post(`/products/${id}/reviews`, data);
+export const getAllProducts = (params) => API.get('/api/products', { params });
+export const getProduct = (id) => API.get(`/api/products/${id}`);
+export const createProduct = (data) => API.post('/api/products', data);
+export const updateProduct = (id, data) => API.put(`/api/products/${id}`, data);
+export const deleteProduct = (id) => API.delete(`/api/products/${id}`);
+export const getMyProducts = () => API.get('/api/products/vendor/my-products');
+export const addReview = (id, data) => API.post(`/api/products/${id}/reviews`, data);
 
 // Message APIs
-export const sendMessage = (data) => API.post('/messages', data);
-export const getConversation = (userId) => API.get(`/messages/conversation/${userId}`);
-export const getAllConversations = () => API.get('/messages/conversations');
-export const getUnreadCount = () => API.get('/messages/unread-count');
-export const markAsRead = (id) => API.put(`/messages/${id}/read`);
-export const deleteMessage = (id) => API.delete(`/messages/${id}`);
+export const sendMessage = (data) => API.post('/api/messages', data);
+export const getConversation = (userId) => API.get(`/api/messages/conversation/${userId}`);
+export const getAllConversations = () => API.get('/api/messages/conversations');
+export const getUnreadCount = () => API.get('/api/messages/unread-count');
+export const markAsRead = (id) => API.put(`/api/messages/${id}/read`);
+export const deleteMessage = (id) => API.delete(`/api/messages/${id}`);
 
 // User APIs
-export const getAllUsers = (params) => API.get('/users', { params });
-export const getUser = (id) => API.get(`/users/${id}`);
-export const updateUser = (id, data) => API.put(`/users/${id}`, data);
-export const deactivateUser = (id) => API.put(`/users/${id}/deactivate`);
-export const activateUser = (id) => API.put(`/users/${id}/activate`);
-export const deleteUser = (id) => API.delete(`/users/${id}`);
-export const getStatistics = () => API.get('/users/admin/statistics');
+export const getAllUsers = (params) => API.get('/api/users', { params });
+export const getUser = (id) => API.get(`/api/users/${id}`);
+export const updateUser = (id, data) => API.put(`/api/users/${id}`, data);
+export const deactivateUser = (id) => API.put(`/api/users/${id}/deactivate`);
+export const activateUser = (id) => API.put(`/api/users/${id}/activate`);
+export const deleteUser = (id) => API.delete(`/api/users/${id}`);
+export const getStatistics = () => API.get('/api/users/admin/statistics');
 
 // Order APIs
-export const createOrder = (data) => API.post('/orders', data);
-export const initializePayment = (orderId) => API.post(`/orders/${orderId}/pay`);
-export const verifyPayment = (reference) => API.get(`/orders/verify/${reference}`);
-export const getMyOrders = () => API.get('/orders/my-orders');
-export const getOrder = (id) => API.get(`/orders/${id}`);
+export const createOrder = (data) => API.post('/api/orders', data);
+export const initializePayment = (orderId) => API.post(`/api/orders/${orderId}/pay`);
+export const verifyPayment = (reference) => API.get(`/api/orders/verify/${reference}`);
+export const getMyOrders = () => API.get('/api/orders/my-orders');
+export const getOrder = (id) => API.get(`/api/orders/${id}`);
+
+// Wishlist APIs
+export const getWishlist = () => API.get('/api/wishlist');
+export const addToWishlist = (productId) => API.post(`/api/wishlist/${productId}`);
+export const removeFromWishlist = (productId) => API.delete(`/api/wishlist/${productId}`);
+export const checkWishlist = (productId) => API.get(`/api/wishlist/check/${productId}`);
 
 // Image Upload APIs
-export const uploadSingle = (formData) => API.post('/upload/single', formData, {
+export const uploadSingle = (formData) => API.post('/api/upload/single', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 });
 
-export const uploadMultiple = (formData) => API.post('/upload/multiple', formData, {
+export const uploadMultiple = (formData) => API.post('/api/upload/multiple', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 });
 
